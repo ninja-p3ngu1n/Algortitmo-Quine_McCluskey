@@ -1,1 +1,1 @@
-# Algortitmo-Quine_McCluskey
+# Algortitmo-Quine_McCluskey.
