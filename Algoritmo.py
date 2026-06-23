@@ -125,3 +125,16 @@ def format_expression(implicants):
         term_str = ""
         for i, char in enumerate(imp):
             var_name = chr(65 + i)
+            if char == '1':
+                term_str += var_name
+            elif char == '0':
+                term_str += var_name + "'"
+        if term_str:
+            terms.append(term_str)
+    
+    return " + ".join(terms) if terms else "1"
+
+def solve_quine_mccluskey(minterms, num_vars):
+    prime_implicants = get_prime_implicants(minterms, num_vars)
+    essential_pi = select_essential_prime_implicants(prime_implicants, minterms, num_vars)
+    return format_expression(essential_pi)

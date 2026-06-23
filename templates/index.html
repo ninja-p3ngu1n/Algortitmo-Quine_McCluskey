@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minimizador Quine-McCluskey</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Outfit:wght@500;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome para los íconos -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="background-anim"></div>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <i class="fa-solid fa-microchip"></i>
+            </div>
+            <h1>Quine-McCluskey</h1>
+            <p class="subtitle">Minimización de Funciones Booleanas</p>
+        </header>
+
+        <main class="glass-panel">
+            <div class="input-section">
+                <div class="control-group">
+                    <label for="num-vars">Número de Variables</label>
+                    <div class="counter-wrapper">
+                        <button class="counter-btn" id="btn-dec" aria-label="Disminuir"><i class="fa-solid fa-minus"></i></button>
+                        <input type="number" id="num-vars" min="2" max="10" value="3" readonly>
+                        <button class="counter-btn" id="btn-inc" aria-label="Aumentar"><i class="fa-solid fa-plus"></i></button>
+                    </div>
+                </div>
+
+                <div class="calculator-section">
+                    <div class="section-header">
+                        <h2>Calculadora Booleana</h2>
+                    </div>
+                    <div class="expr-input-group">
+                        <input type="text" id="bool-expr" class="expr-input" placeholder="Ej: A·(B + C')">
+                        <button id="btn-eval-expr" class="btn-primary-small"><i class="fa-solid fa-play"></i> Evaluar</button>
+                    </div>
+                    <div class="calc-buttons" id="calc-buttons">
+                        <!-- Generado dinámicamente -->
+                    </div>
+                    
+                    <div class="examples-section">
+                        <h3>Ejemplos Válidos:</h3>
+                        <ul>
+                            <li><code>A·B + C</code> (A AND B OR C)</li>
+                            <li><code>A'B</code> o <code>A'·B</code> (NOT A AND B)</li>
+                            <li><code>~(A + B)</code> (NOT (A OR B))</li>
+                            <li><code>ABCD</code> (A AND B AND C AND D)</li>
+                        </ul>
+                        <p class="syntax-note"><strong>Nota:</strong> Usa <code>'</code> (comilla simple) justo después de una letra (Ej: <code>A'</code>). Puedes omitir el punto entre variables (Ej: <code>AB</code> es lo mismo que <code>A·B</code>). Para negar grupos entre paréntesis, usa el símbolo <code>~</code> (Ej: <code>~(A+B)</code>).</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="result-section" id="result-section">
+                <div class="result-card">
+                    <h2>Expresión Minimizada</h2>
+                    <div class="expression-display" id="expression-display">
+                        <span class="placeholder">Esperando entrada...</span>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
