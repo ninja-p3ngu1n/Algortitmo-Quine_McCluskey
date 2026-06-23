@@ -18,8 +18,16 @@ def minimize():
     
     try:
         minterms = [int(m) for m in minterms]
-        expression = Algoritmo.solve_quine_mccluskey(minterms, num_vars)
-        return jsonify({'expression': expression})
+        if minterms:
+            expression_min, steps_html = Algoritmo.solve_quine_mccluskey_with_steps(minterms, num_vars)
+        else:
+            expression_min = '0'
+            steps_html = '<p>No hay minitérminos que evaluar, por lo tanto la función es siempre <strong>0</strong>.</p>'
+            
+        return jsonify({
+            'expression': expression_min,
+            'steps_html': steps_html
+        })
     except Exception as e:
         return jsonify({'error': str(e)}), 400
 
@@ -84,10 +92,15 @@ def evaluate():
                 minterms.append(i)
                 
         # También calculamos la minimización de una vez
-        expression_min = Algoritmo.solve_quine_mccluskey(minterms, num_vars) if minterms else '0'
+        if minterms:
+            expression_min, steps_html = Algoritmo.solve_quine_mccluskey_with_steps(minterms, num_vars)
+        else:
+            expression_min = '0'
+            steps_html = '<p>No hay minitérminos que evaluar, por lo tanto la función es siempre <strong>0</strong>.</p>'
         
         return jsonify({
-            'expression': expression_min
+            'expression': expression_min,
+            'steps_html': steps_html
         })
     except Exception as e:
         return jsonify({'error': str(e)}), 400

@@ -6,8 +6,18 @@
     <title>Minimizador Quine-McCluskey</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Outfit:wght@500;700&display=swap" rel="stylesheet">
-    <!-- FontAwesome para los íconos -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- MathJax for LaTeX rendering -->
+    <script>
+    MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']],
+        displayMath: [['\\[', '\\]']]
+      }
+    };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 </head>
 <body>
     <div class="background-anim"></div>
@@ -16,31 +26,35 @@
             <div class="logo">
                 <i class="fa-solid fa-microchip"></i>
             </div>
-            <h1>Quine-McCluskey</h1>
-            <p class="subtitle">Minimización de Funciones Booleanas</p>
+            <h1>Minimizador Lógico</h1>
+            <p>Calculadora y Tabla de Verdad usando Quine-McCluskey</p>
+            <div class="mode-toggle">
+                <button id="btn-mode-calc" class="active"><i class="fa-solid fa-calculator"></i> Calculadora</button>
+                <button id="btn-mode-table"><i class="fa-solid fa-table"></i> Tabla</button>
+            </div>
         </header>
 
-        <main class="glass-panel">
-            <div class="input-section">
-                <div class="control-group">
-                    <label for="num-vars">Número de Variables</label>
-                    <div class="counter-wrapper">
-                        <button class="counter-btn" id="btn-dec" aria-label="Disminuir"><i class="fa-solid fa-minus"></i></button>
-                        <input type="number" id="num-vars" min="2" max="10" value="3" readonly>
-                        <button class="counter-btn" id="btn-inc" aria-label="Aumentar"><i class="fa-solid fa-plus"></i></button>
+        <main class="main-content">
+            <div class="controls-section">
+                <div class="glass-panel" style="margin-bottom: 1.5rem;">
+                    <div class="control-group" style="margin-bottom: 0;">
+                        <label for="num-vars" style="color: var(--accent); margin-bottom: 0.5rem; display: block; font-weight: 600;">Número de Variables (Quine-McCluskey)</label>
+                        <div class="counter-wrapper">
+                            <button class="counter-btn" id="btn-dec" aria-label="Disminuir"><i class="fa-solid fa-minus"></i></button>
+                            <input type="number" id="num-vars" min="2" max="10" value="3" readonly>
+                            <button class="counter-btn" id="btn-inc" aria-label="Aumentar"><i class="fa-solid fa-plus"></i></button>
+                        </div>
                     </div>
                 </div>
 
-                <div class="calculator-section">
-                    <div class="section-header">
-                        <h2>Calculadora Booleana</h2>
-                    </div>
-                    <div class="expr-input-group">
-                        <input type="text" id="bool-expr" class="expr-input" placeholder="Ej: A·(B + C')">
+                <!-- Modo Calculadora -->
+                <div id="calculator-mode" class="glass-panel">
+                    <div class="expr-input-group" style="margin-bottom: 1rem;">
+                        <input type="text" id="bool-expr" class="expr-input" placeholder="Ej: A'B'C'D' + A'B'CD'..." autocomplete="off" spellcheck="false">
                         <button id="btn-eval-expr" class="btn-primary-small"><i class="fa-solid fa-play"></i> Evaluar</button>
                     </div>
-                    <div class="calc-buttons" id="calc-buttons">
-                        <!-- Generado dinámicamente -->
+                    <div class="calc-buttons" id="calc-buttons" style="margin-bottom: 1rem;">
+                        <!-- Buttons injected via JS -->
                     </div>
                     
                     <div class="examples-section">
@@ -51,7 +65,26 @@
                             <li><code>~(A + B)</code> (NOT (A OR B))</li>
                             <li><code>ABCD</code> (A AND B AND C AND D)</li>
                         </ul>
-                        <p class="syntax-note"><strong>Nota:</strong> Usa <code>'</code> (comilla simple) justo después de una letra (Ej: <code>A'</code>). Puedes omitir el punto entre variables (Ej: <code>AB</code> es lo mismo que <code>A·B</code>). Para negar grupos entre paréntesis, usa el símbolo <code>~</code> (Ej: <code>~(A+B)</code>).</p>
+                        <p class="syntax-note"><strong>Nota:</strong> Usa <code>'</code> (comilla simple) justo después de una letra (Ej: <code>A'</code>). Puedes omitir el punto entre variables (Ej: <code>AB</code> es lo mismo que <code>A·B</code>). Para negar grupos entre paréntesis, usa el símbolo <code>~</code>.</p>
+                    </div>
+                </div>
+
+                <!-- Modo Tabla de Verdad -->
+                <div id="table-mode" class="glass-panel" style="display: none;">
+                    <p style="color: var(--text-muted); margin-bottom: 1rem; font-size: 0.9rem;">Haz clic en los ceros (0) de la columna "F" para encenderlos (1) y crear tu función.</p>
+                    <div class="table-container">
+                        <table class="truth-table">
+                            <thead>
+                                <tr id="table-head"></tr>
+                            </thead>
+                            <tbody id="table-body">
+                                <!-- Filas generadas por JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="table-actions">
+                        <button id="btn-clear" class="btn-secondary"><i class="fa-solid fa-eraser"></i> Limpiar F</button>
+                        <button id="btn-minimize-table" class="btn-primary"><i class="fa-solid fa-wand-magic-sparkles"></i> Minimizar</button>
                     </div>
                 </div>
             </div>
@@ -62,9 +95,24 @@
                     <div class="expression-display" id="expression-display">
                         <span class="placeholder">Esperando entrada...</span>
                     </div>
+                    
+                    <button id="btn-toggle-steps" class="btn-secondary" style="margin-top: 1.5rem; display: none; margin-left: auto; margin-right: auto;">
+                        <i class="fa-solid fa-list-ol"></i> Ver Paso a Paso (Quine-McCluskey)
+                    </button>
                 </div>
             </div>
         </main>
+    </div>
+
+    <!-- Sidebar para el Paso a Paso -->
+    <div id="steps-sidebar" class="steps-sidebar">
+        <div class="sidebar-header">
+            <h2>Paso a Paso</h2>
+            <button id="btn-close-sidebar" class="btn-close-sidebar" aria-label="Cerrar"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div id="steps-content" class="sidebar-content">
+            <!-- Contenido de pasos generado -->
+        </div>
     </div>
 
     <script src="{{ url_for('static', filename='script.js') }}"></script>
