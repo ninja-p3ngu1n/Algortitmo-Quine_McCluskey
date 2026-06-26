@@ -12,6 +12,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const stepsSidebar = document.getElementById('steps-sidebar');
     const stepsContent = document.getElementById('steps-content');
     const btnCloseSidebar = document.getElementById('btn-close-sidebar');
+    
+    const circFileInput = document.getElementById('circ-file');
+    const btnUploadCirc = document.getElementById('btn-upload-circ');
 
     const btnModeCalc = document.getElementById('btn-mode-calc');
     const btnModeTable = document.getElementById('btn-mode-table');
@@ -187,6 +190,43 @@ document.addEventListener('DOMContentLoaded', () => {
 
     btnCloseSidebar.addEventListener('click', () => {
         stepsSidebar.classList.remove('open');
+    });
+    
+    btnUploadCirc.addEventListener('click', () => {
+        circFileInput.click();
+    });
+    
+    circFileInput.addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        const formData = new FormData();
+        formData.append('file', file);
+        
+        btnUploadCirc.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i>';
+        btnUploadCirc.disabled = true;
+        
+        try {
+            const response = await fetch('/api/upload-circ', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await response.json();
+            
+            if (response.ok) {
+                boolExprInput.value = data.expression;
+                // Opcional: autoevaluar
+                // btnEvalExpr.click();
+            } else {
+                showResult(`<span style="color: var(--danger); font-size: 0.9rem; line-height: 1.2;">Error: ${data.error}</span>`);
+            }
+        } catch (error) {
+            showResult(`<span style="color: var(--danger); font-size: 0.9rem;">Error de conexión al procesar el archivo.</span>`);
+        } finally {
+            btnUploadCirc.innerHTML = '<i class="fa-solid fa-file-import"></i>';
+            btnUploadCirc.disabled = false;
+            circFileInput.value = '';
+        }
     });
 
     btnEvalExpr.addEventListener('click', async () => {

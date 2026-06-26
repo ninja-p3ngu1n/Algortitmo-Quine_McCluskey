@@ -1,1 +1,5 @@
 Flask==3.0.0
+pywebview
+PyQt6
+PyQt6-WebEngine
+qtpy

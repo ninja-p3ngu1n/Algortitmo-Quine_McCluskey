@@ -1,5 +1,10 @@
 from flask import Flask, request, jsonify, render_template
+import os
+import tempfile
+import webbrowser
+from threading import Timer
 import Algoritmo
+import circ_parser
 
 app = Flask(__name__)
 
@@ -66,6 +71,10 @@ def evaluate():
         # 4. Reemplazar comillas simples (A') por not A
         expr = re.sub(r'([A-Z])\'', r'not \1', expr)
         
+        # 5. Manejar negación de paréntesis con comilla simple ej: (A+B)'
+        while re.search(r'\(([^()]*)\)\'', expr):
+            expr = re.sub(r'\(([^()]*)\)\'', r'not (\1)', expr)
+        
         # Para que 'and', 'or', 'not' funcionen bien en eval
         expr = expr.lower()
         
@@ -93,7 +102,20 @@ def evaluate():
                 
         # También calculamos la minimización de una vez
         if minterms:
-            expression_min, steps_html = Algoritmo.solve_quine_mccluskey_with_steps(minterms, num_vars)
+            expression_min, alg_steps = Algoritmo.solve_quine_mccluskey_with_steps(minterms, num_vars)
+            
+            # Prepend expression evaluation explanation
+            eval_steps = ["<h3>Paso 0: Evaluación de la Expresión Booleana</h3>"]
+            eval_steps.append(f"<p>Para saber de dónde salen los números (minitérminos), evaluamos tu expresión <strong>{expression}</strong> usando todas las combinaciones posibles de 0s y 1s para las {num_vars} variables.</p>")
+            eval_steps.append("<p>Cada combinación que da como resultado <strong>1 (Verdadero)</strong> se anota, y su valor en binario se convierte a un número decimal (el minitérmino).</p>")
+            eval_steps.append("<ul>")
+            for m in minterms:
+                b_str = bin(m)[2:].zfill(num_vars)
+                vars_str = ", ".join([f"{chr(65+i)}={b_str[i]}" for i in range(num_vars)])
+                eval_steps.append(f"<li>Si {vars_str} \\(\\rightarrow\\) Combinación <strong>{b_str}</strong> en binario = <strong>{m}</strong> en decimal.</li>")
+            eval_steps.append("</ul>")
+            
+            steps_html = "\n".join(eval_steps) + "\n<hr style='border-color: rgba(255,255,255,0.1); margin: 1.5rem 0;'>" + alg_steps
         else:
             expression_min = '0'
             steps_html = '<p>No hay minitérminos que evaluar, por lo tanto la función es siempre <strong>0</strong>.</p>'
@@ -105,5 +127,41 @@ def evaluate():
     except Exception as e:
         return jsonify({'error': str(e)}), 400
 
+@app.route('/api/upload-circ', methods=['POST'])
+def upload_circ():
+    if 'file' not in request.files:
+        return jsonify({'error': 'No se encontró archivo'}), 400
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'error': 'Archivo no seleccionado'}), 400
+    if not file.filename.endswith('.circ'):
+        return jsonify({'error': 'Debe ser un archivo .circ'}), 400
+        
+    try:
+        # Guardar en un temporal para parsear
+        fd, temp_path = tempfile.mkstemp(suffix='.circ')
+        os.close(fd)
+        file.save(temp_path)
+        
+        # Parsear
+        expr = circ_parser.parse_circ(temp_path)
+        os.remove(temp_path)
+        
+        if not expr:
+            return jsonify({'error': 'No se detectó salida o ecuación en el circuito'}), 400
+            
+        return jsonify({'expression': expr})
+    except Exception as e:
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
+        return jsonify({'error': f'Error al leer el circuito: {str(e)}'}), 400
+
+def open_browser():
+    webbrowser.open_new('http://127.0.0.1:5000/')
+
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    # Abrir el navegador automáticamente sin tener que copiar el link
+    if os.environ.get('WERKZEUG_RUN_MAIN') != 'true':
+        Timer(1.25, open_browser).start()
+        
+    app.run(port=5000, debug=True)
